@@ -1,0 +1,17 @@
+{
+  "name": "JARVIS - Personal Assistant",
+  "short_name": "JARVIS",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#030914",
+  "theme_color": "#06111f",
+  "description": "Phone-first JARVIS assistant prototype",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

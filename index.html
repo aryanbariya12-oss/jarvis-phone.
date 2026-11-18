@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#06111f">
+<meta name="description" content="JARVIS personal assistant — phone-first, offline-capable prototype.">
+<link rel="manifest" href="manifest.webmanifest">
+<title>J.A.R.V.I.S.</title>
+<style>
+:root{color-scheme:dark;--bg:#030914;--panel:#091a2c;--line:#174365;--blue:#36bfff;--cyan:#8ce4ff;--muted:#83a9c2;--white:#e9f7ff}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% 22%,#0c2942 0,#061322 38%,#030914 76%);color:var(--white);font-family:system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh}
+main{max-width:680px;margin:auto;padding:calc(20px + env(safe-area-inset-top)) 18px calc(24px + env(safe-area-inset-bottom))}
+header{display:flex;justify-content:space-between;align-items:center}.brand{letter-spacing:.28em;color:var(--cyan);font-weight:800;font-size:20px}.ver{font-size:10px;color:var(--muted);border:1px solid var(--line);border-radius:20px;padding:6px 9px}
+.sub{text-align:center;color:#8eb8d2;font-size:10px;letter-spacing:.2em;margin-top:8px}
+.core-wrap{display:grid;place-items:center;margin:28px auto 20px;position:relative;width:250px;height:250px}
+.core{width:184px;height:184px;border-radius:50%;border:1px solid #39bfff88;display:grid;place-items:center;box-shadow:0 0 24px #19aaff44,inset 0 0 30px #168ad833;position:relative;background:radial-gradient(circle,#16496b 0,#09253d 52%,#061322 72%)}
+.core:before,.core:after{content:"";position:absolute;border-radius:50%;inset:-17px;border:1px dashed #3cbcff88;animation:spin 18s linear infinite}
+.core:after{inset:-31px;border:1px solid #1b82b866;animation-direction:reverse;animation-duration:25s}
+.core span{font-size:60px;font-weight:200;color:#b5efff;text-shadow:0 0 20px #39bfff}
+.ring{position:absolute;inset:0;border-radius:50%;border:1px solid #1b82b844}
+@keyframes spin{to{transform:rotate(360deg)}}.listening .core{box-shadow:0 0 48px #21c4ff99,inset 0 0 42px #168ad877;animation:pulse 1.2s ease-in-out infinite alternate}
+@keyframes pulse{to{transform:scale(1.045)}}
+.status{text-align:center;color:var(--blue);letter-spacing:.18em;font-size:12px;font-weight:700}.hint{text-align:center;color:var(--muted);font-size:12px;margin-top:7px}
+button{border:1px solid #2379a8;background:linear-gradient(135deg,#0b4d76,#087db4);color:white;border-radius:14px;padding:13px 16px;font-weight:700;font-size:14px;cursor:pointer}
+button:active{transform:scale(.98)}button.secondary{background:#0a1b2b;border-color:#1a405c;color:#b9eaff}
+.controls{display:flex;gap:10px;justify-content:center;margin:20px 0}.controls button{min-width:130px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:18px 0}.tile{background:#081a2b;border:1px solid #153b58;border-radius:13px;padding:11px}.tile small{display:block;color:var(--muted);font-size:10px;letter-spacing:.12em}.tile strong{display:block;margin-top:5px;font-size:13px;font-weight:600}
+.card{background:#071727dd;border:1px solid #153c59;border-radius:17px;padding:15px;margin-top:13px}.label{font-size:10px;letter-spacing:.17em;color:#75b9dd;margin-bottom:8px}.reply{font-size:14px;line-height:1.55;min-height:40px}.heard{color:#a8c7dc;font-size:13px;min-height:20px}
+.quick{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.quick button{font-size:11px;padding:9px 11px;border-radius:20px}
+form{display:flex;gap:8px;margin-top:12px}input{min-width:0;flex:1;background:#04111e;border:1px solid #1b4564;border-radius:12px;padding:12px;color:white;font-size:14px;outline:none}input:focus{border-color:var(--blue)}
+.foot{text-align:center;color:#587c95;font-size:10px;line-height:1.6;margin:20px 10px}
+@media(max-width:380px){.core-wrap{transform:scale(.9);margin:12px auto}.grid{gap:6px}.tile{padding:9px 7px}}
+</style>
+</head>
+<body>
+<main>
+<header><div class="brand">J.A.R.V.I.S.</div><div class="ver">PHONE EDITION · V1.0</div></header>
+<div class="sub">JUST A RATHER VERY INTELLIGENT SYSTEM</div>
+
+<div class="core-wrap" id="coreWrap"><div class="ring"></div><div class="core"><span>J</span></div></div>
+<div class="status" id="status">SYSTEM STANDBY</div>
+<div class="hint" id="hint">Tap the microphone to speak</div>
+
+<div class="controls">
+<button id="micBtn">🎙 ACTIVATE</button>
+<button class="secondary" id="stopBtn">■ STOP</button>
+</div>
+
+<div class="grid">
+ <div class="tile"><small>LOCAL TIME</small><strong id="clock">--:--</strong></div>
+ <div class="tile"><small>BATTERY</small><strong id="battery">Unavailable</strong></div>
+ <div class="tile"><small>CONNECTION</small><strong id="network">Checking…</strong></div>
+</div>
+
+<section class="card">
+ <div class="label">JARVIS RESPONSE</div>
+ <div class="reply" id="reply">Good day. JARVIS is online and ready for your commands.</div>
+</section>
+<section class="card">
+ <div class="label">VOICE INPUT</div>
+ <div class="heard" id="heard">Nothing heard yet.</div>
+ <form id="commandForm"><input id="commandInput" autocomplete="off" placeholder="Type a command…"><button type="submit">SEND</button></form>
+ <div class="quick">
+  <button class="secondary" data-cmd="Hello Jarvis">HELLO</button>
+  <button class="secondary" data-cmd="What time is it?">TIME</button>
+  <button class="secondary" data-cmd="What is my battery level?">BATTERY</button>
+  <button class="secondary" data-cmd="Give me motivation">MOTIVATE ME</button>
+  <button class="secondary" data-cmd="What can you do?">HELP</button>
+ </div>
+</section>
+<div class="foot">HYBRID PROTOTYPE · Local commands work without an AI API.<br>Voice recognition availability depends on your browser and device speech service.</div>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const status=$('status'), reply=$('reply'), heard=$('heard'), core=$('coreWrap');
+let recognition=null;
+function say(text){
+ reply.textContent=text;
+ if(!('speechSynthesis' in window)) return;
+ speechSynthesis.cancel();
+ const u=new SpeechSynthesisUtterance(text);
+ u.lang='en-GB'; u.rate=.88; u.pitch=.82;
+ const voices=speechSynthesis.getVoices();
+ const british=voices.find(v=>/^en-GB/i.test(v.lang) && /male|daniel|george|oliver|arthur/i.test(v.name))
+   || voices.find(v=>/^en-GB/i.test(v.lang));
+ if(british) u.voice=british;
+ speechSynthesis.speak(u);
+}
+function localCommand(raw){
+ const c=raw.toLowerCase().trim();
+ heard.textContent=raw;
+ let response='';
+ if(/\b(hello|hi|good morning|good evening)\b/.test(c)) response='Good day. All local systems are operational. How may I assist you?';
+ else if(c.includes('time')) response='The current time is '+new Date().toLocaleTimeString('en-GB',{hour:'numeric',minute:'2-digit'})+'.';
+ else if(c.includes('date')) response='Today is '+new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+'.';
+ else if(c.includes('battery')){
+   if(navigator.getBattery){navigator.getBattery().then(b=>say('Your battery is at '+Math.round(b.level*100)+' percent.'));return;}
+   response='Battery information is not exposed by this browser. You can check it in your phone status bar.';
+ }
+ else if(c.includes('motivat')) response='Small actions, repeated consistently, create extraordinary results. One task at a time. Let us begin.';
+ else if(c.includes('who are you')||c.includes('what can you do')||c.includes('help')) response='I am JARVIS, your phone-based assistant prototype. I can tell you the time and date, check supported battery information, offer motivation, and speak responses. Online AI and deeper phone controls are not connected yet.';
+ else if(c.includes('open settings')) response='I cannot launch Android settings from this browser version. Use your phone settings for that action.';
+ else if(c.includes('thank')) response='You are most welcome.';
+ else response='I have received your request, but online AI is not connected in this free first version. Local commands still work. Try asking for the time, date, battery, or help.';
+ status.textContent='COMMAND COMPLETE'; say(response);
+}
+function startListening(){
+ const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!SR){status.textContent='VOICE INPUT UNAVAILABLE';say('Speech recognition is not supported in this browser. Please use the text command box.');return;}
+ try{
+  recognition=new SR(); recognition.lang='en-GB'; recognition.interimResults=false; recognition.maxAlternatives=1;
+  recognition.onstart=()=>{status.textContent='LISTENING';core.classList.add('listening');$('hint').textContent='I am listening…';};
+  recognition.onresult=e=>{const text=e.results[0][0].transcript;localCommand(text);};
+  recognition.onerror=e=>{status.textContent='VOICE ERROR';$('hint').textContent='Try again or type your command.';};
+  recognition.onend=()=>{core.classList.remove('listening');if(status.textContent==='LISTENING')status.textContent='SYSTEM STANDBY';$('hint').textContent='Tap the microphone to speak';};
+  recognition.start();
+ }catch(e){status.textContent='VOICE UNAVAILABLE';}
+}
+$('micBtn').addEventListener('click',startListening);
+$('stopBtn').addEventListener('click',()=>{if(recognition)recognition.stop();if('speechSynthesis'in window)speechSynthesis.cancel();core.classList.remove('listening');status.textContent='SYSTEM STANDBY';});
+$('commandForm').addEventListener('submit',e=>{e.preventDefault();const v=$('commandInput').value.trim();if(v){localCommand(v);$('commandInput').value='';}});
+document.querySelectorAll('[data-cmd]').forEach(b=>b.addEventListener('click',()=>localCommand(b.dataset.cmd)));
+function updateClock(){$('clock').textContent=new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});}
+updateClock();setInterval(updateClock,1000);
+function updateNetwork(){$('network').textContent=navigator.onLine?'ONLINE':'OFFLINE';}
+updateNetwork();addEventListener('online',updateNetwork);addEventListener('offline',updateNetwork);
+if(navigator.getBattery){navigator.getBattery().then(b=>{const upd=()=> $('battery').textContent=Math.round(b.level*100)+'%'+(b.charging?' · charging':'');upd();b.addEventListener('levelchange',upd);b.addEventListener('chargingchange',upd);}).catch(()=>{});}
+if('serviceWorker'in navigator && location.protocol.startsWith('http')){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}
+if('speechSynthesis'in window)speechSynthesis.getVoices();
+</script>
+</body>
+</html>
